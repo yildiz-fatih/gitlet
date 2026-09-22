@@ -22,4 +22,8 @@ public class Commit implements Serializable {
         this.parents = parents;
         this.filemap = filemap;
     }
+
+    public Map<String, String> getFilemap() {
+        return filemap;
+    }
 }

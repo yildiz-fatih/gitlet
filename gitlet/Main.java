@@ -8,8 +8,9 @@ public class Main {
      */
     public static void main(String[] args) {
         /*
-            * TODO: If a user inputs a command with the wrong number or format of operands,
-            *       print the message "Incorrect operands." and exit.
+            * TODO: // this is a Gitlet specs requirement to keep in mind for all command implementations
+            *   If a user inputs a command with the wrong number or format of operands,
+            *   print the message "Incorrect operands." and exit with 0.
          */
         if (args.length == 0) {
             System.out.println("Please enter a command.");
@@ -25,10 +26,18 @@ public class Main {
 
         switch(firstArg) {
             case "init":
+                if (args.length != 1) {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                }
                 Repository.init();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                if (args.length != 2) {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                }
+                Repository.add(args[1]);
                 break;
             // TODO: FILL THE REST IN
             default:
