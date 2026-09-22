@@ -54,30 +54,35 @@ public class Repository {
     }
 
     public static void init() {
+        // check for an existing gitlet directory
         if (Repository.GITLET_DIR.isDirectory()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
-        // create a ".gitlet/" directory
-        if (!GITLET_DIR.mkdir()) {
-            System.out.println("UNEXPECTED");
-            System.exit(1);
-        }
-        // create new Commit
+
+        /* create the ".gitlet" directory */
+        GITLET_DIR.mkdir();
+
+        /* create the initial commit */
         var initialCommit = new Commit("initial commit", new Date(0), new ArrayList<>(), new HashMap<>());
-        // serialize commit
+        // serialize
         var commitBytes = serialize(initialCommit);
-        // hash the serialized commit object
+        // hash the bytes
         var commitHash = sha1(commitBytes);
-        // put it in ".gitlet/objects/commits/sha1-hash-of-this-commit"
-        var commitObject = join(COMMITS_DIR, commitHash);
+        // make directory ".gitlet/objects/commits"
         COMMITS_DIR.mkdirs();
+        // write the commit to a file at ".gitlet/objects/commits/commit-hash"
+        var commitObject = join(COMMITS_DIR, commitHash);
         writeContents(commitObject, commitBytes);
-        // create a ".gitlet/refs/heads/master" and put the sha1-hash of the commit in it
-        var masterRef = join(HEADS_DIR, "master");
+
+        /* create the master branch at ".gitlet/refs/heads/master" */
+        // make directory ".gitlet/refs/heads"
         HEADS_DIR.mkdirs();
+        // write the commit hash to the master branch file
+        var masterRef = join(HEADS_DIR, "master");
         writeContents(masterRef, commitHash);
-        // create a "./gitlet/HEAD" and put "ref: refs/heads/master" in it
+
+        /* create the "./gitlet/HEAD" file, write the master branch to it as "ref: refs/heads/master" */
         writeContents(HEAD_FILE, "ref: refs/heads/master");
     }
 
