@@ -1,11 +1,8 @@
 package gitlet;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.File;
-import java.util.Date;
-import java.util.HashMap;
 
 import static gitlet.Utils.*;
 
@@ -31,7 +28,7 @@ public class Repository {
     }
 
     private static Map<String, String> readIndex() {
-        var indexMap = new HashMap<String, String>(); // mapping of filename -> hash
+        var indexMap = new TreeMap<String, String>(); // mapping of filename -> hash
         if (INDEX_FILE.exists()) {
             var indexString = readContentsAsString(INDEX_FILE);
             var lines = indexString.lines().collect(Collectors.toList());
@@ -64,7 +61,7 @@ public class Repository {
         GITLET_DIR.mkdir();
 
         /* create the initial commit */
-        var initialCommit = new Commit("initial commit", new Date(0), new ArrayList<>(), new HashMap<>());
+        var initialCommit = new Commit("initial commit", new Date(0), new ArrayList<>(), new TreeMap<>());
         // serialize
         var commitBytes = serialize(initialCommit);
         // hash the bytes
@@ -121,6 +118,45 @@ public class Repository {
 
         // add it to the staging area (".gitlet/index")
         indexMap.put(filename, fileHash);
+        writeIndex(indexMap);
+    }
+
+    public static void commit(String message) {
+        if (message.equals("")) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
+
+        var indexMap = readIndex(); // mapping of filename -> hash
+        if (indexMap.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
+
+        var headString = readContentsAsString(HEAD_FILE);
+        var branchFile = join(GITLET_DIR, headString.split(" ")[1]);
+        var parentCommitHash = readContentsAsString(branchFile);
+        var commitFile = join(COMMITS_DIR, parentCommitHash);
+        var parentCommit = readObject(commitFile, Commit.class);
+        var parentFilemap = parentCommit.getFilemap();
+
+        // build the new filemap for the commit
+        var currentFilemap = new TreeMap<String, String>();
+        // copy (bring over) the parentFilemap
+        currentFilemap.putAll(parentFilemap);
+        // bring over the files in the index: add the new ones, update the existing ones (from the parentfilemap)
+        currentFilemap.putAll(indexMap);
+        // create the new commit
+        var currentCommit = new Commit(message, new Date(), new ArrayList<>(List.of(parentCommitHash)), currentFilemap);
+        // serialize -> hash -> write to ".gitlet/objects/commits/commit-hash"
+        var currentCommitBytes = serialize(currentCommit);
+        var currentCommitHash = sha1(currentCommitBytes);
+        var currentCommitObject = join(COMMITS_DIR, currentCommitHash);
+        writeContents(currentCommitObject, currentCommitBytes);
+        // update the branch file to point to the new hash
+        writeContents(branchFile, currentCommitHash);
+        // clear the index
+        indexMap.clear();
         writeIndex(indexMap);
     }
 
