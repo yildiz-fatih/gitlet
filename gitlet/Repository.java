@@ -87,35 +87,41 @@ public class Repository {
     }
 
     public static void add(String filename) {
-        // file stuff
+        // ensure file exists
         var file = join(CWD, filename);
         if (!file.exists()) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
-        var fileBytes = readContents(file);
-        var fileHash = sha1(fileBytes);
 
+        // read the file's bytes
+        var fileBytes = readContents(file);
+        // hash the bytes
+        var fileHash = sha1(fileBytes);
+        // look up the current commit's recorded hash for this filename
+        var currentCommit = getHeadCommit();
+        var committedHash = currentCommit.getFilemap().get(filename);
+        // load the staging area (".gitlet/index") into a map
         var indexMap = readIndex(); // mapping of filename -> hash
 
-        // If the current working version of the file is identical to the version in the current commit,
-        //            do not stage it to be added, and remove it from the staging area if it is already there
-        var commit = getHeadCommit();
-        var committedHash = commit.getFilemap().get(filename);
+        // check if the added file has changed since the current commit
         if (fileHash.equals(committedHash)) {
+            // working version is identical to what's already committed, it's now a stale entry in the staging area
+            // remove it from the staging area
             indexMap.remove(filename);
             writeIndex(indexMap);
             return;
         }
 
-        // ".gitlet/index" -> "hash filename\n"
-        indexMap.put(filename, fileHash);
-        writeIndex(indexMap);
-
-        // ".gitlet/objects/blobs/sha1-hash-of-this-file"
+        // make directory ".gitlet/objects/blobs"
         BLOBS_DIR.mkdirs();
+        // write the bytes to a file at ".gitlet/objects/blobs/<file's-hash>"
         var fileObject = join(BLOBS_DIR, fileHash);
         writeContents(fileObject, fileBytes);
+
+        // add it to the staging area (".gitlet/index")
+        indexMap.put(filename, fileHash);
+        writeIndex(indexMap);
     }
 
 }
