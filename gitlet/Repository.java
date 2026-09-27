@@ -1,5 +1,6 @@
 package gitlet;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.io.File;
@@ -18,6 +19,21 @@ public class Repository {
     public static final File HEADS_DIR = join(GITLET_DIR, "refs", "heads");
     public static final File INDEX_FILE = join(GITLET_DIR, "index");
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
+
+    private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
+
+    private static class CommitAndHash {
+        private final Commit commit;
+        private final String hash;
+
+        CommitAndHash(Commit commit, String hash) {
+            this.commit = commit;
+            this.hash = hash;
+        }
+
+        Commit commit() { return commit; }
+        String hash() { return hash; }
+    }
 
     private static void writeIndex(Map<String, String> indexMap) {
         StringBuilder indexBuilder = new StringBuilder();
@@ -42,12 +58,13 @@ public class Repository {
         return indexMap;
     }
 
-    private static Commit getHeadCommit() {
+    private static CommitAndHash getHeadCommitAndHash() {
         var head = readContentsAsString(HEAD_FILE);
         var branchFile = join(GITLET_DIR, head.split(" ")[1]);
         var commitHash = readContentsAsString(branchFile);
         var commitFile = join(COMMITS_DIR, commitHash);
-        return readObject(commitFile, Commit.class);
+
+        return new CommitAndHash(readObject(commitFile, Commit.class), commitHash);
     }
 
     public static void init() {
@@ -96,7 +113,7 @@ public class Repository {
         // hash the bytes
         var fileHash = sha1(fileBytes);
         // look up the current commit's recorded hash for this filename
-        var currentCommit = getHeadCommit();
+        var currentCommit = getHeadCommitAndHash().commit();
         var committedHash = currentCommit.getFilemap().get(filename);
         // load the staging area (".gitlet/index") into a map
         var indexMap = readIndex(); // mapping of filename -> hash
@@ -160,4 +177,54 @@ public class Repository {
         writeIndex(indexMap);
     }
 
+    public static void checkoutFileFromHead(String filename) {
+        var headCommit = getHeadCommitAndHash().commit();
+        checkoutFrom(headCommit, filename);
+    }
+
+    public static void checkoutFileFromCommit(String commitHash, String filename) {
+        var commitFile = join(COMMITS_DIR, commitHash);
+        if (!commitFile.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        var commit = readObject(commitFile, Commit.class);
+
+        checkoutFrom(commit, filename);
+    }
+
+    private static void checkoutFrom(Commit commit, String filename) {
+        var committedHash = commit.getFilemap().get(filename);
+        if (committedHash == null) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        var committedFile = join(BLOBS_DIR, committedHash);
+        var committedFileBytes = readContents(committedFile);
+        var fileInWorkingDir = join(CWD, filename);
+        writeContents(fileInWorkingDir, committedFileBytes);
+    }
+
+    public static void log() {
+        var commitInfo = getHeadCommitAndHash();
+        var commit = commitInfo.commit();
+        var commitHash = commitInfo.hash();
+
+        printCommit(commitHash, commit.getTimestamp(), commit.getMessage());
+
+        while (commit.getParents().size() != 0) {
+            commitHash = commit.getParents().get(0);
+            commit = readObject(join(COMMITS_DIR, commitHash), Commit.class);
+
+            printCommit(commitHash, commit.getTimestamp(), commit.getMessage());
+        }
+    }
+
+    private static void printCommit(String hash, Date date, String message) {
+        System.out.println("===");
+        System.out.println("commit " + hash);
+        System.out.println("Date: "+ LOG_DATE_FORMAT.format(date));
+        System.out.println(message);
+        System.out.println();
+    }
 }

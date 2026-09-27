@@ -46,6 +46,23 @@ public class Main {
                 }
                 Repository.commit(args[1]);
                 break;
+            case "checkout":
+                if (args.length == 3 && args[1].equals("--")) {
+                    Repository.checkoutFileFromHead(args[2]);
+                } else if (args.length == 4 && args[2].equals("--")) {
+                    Repository.checkoutFileFromCommit(args[1], args[3]);
+                } else {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                }
+                break;
+            case "log":
+                if (args.length != 1) {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                }
+                Repository.log();
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);

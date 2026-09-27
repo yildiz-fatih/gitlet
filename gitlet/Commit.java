@@ -26,4 +26,16 @@ public class Commit implements Serializable {
     public Map<String, String> getFilemap() {
         return filemap;
     }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public List<String> getParents() {
+        return parents;
+    }
 }
