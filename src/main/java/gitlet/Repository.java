@@ -22,18 +22,7 @@ public class Repository {
 
     private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
 
-    private static class CommitAndHash {
-        private final Commit commit;
-        private final String hash;
-
-        CommitAndHash(Commit commit, String hash) {
-            this.commit = commit;
-            this.hash = hash;
-        }
-
-        Commit commit() { return commit; }
-        String hash() { return hash; }
-    }
+    private static record CommitAndHash(Commit commit, String hash) {}
 
     private static void writeIndex(Map<String, String> indexMap) {
         StringBuilder indexBuilder = new StringBuilder();

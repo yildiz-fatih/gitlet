@@ -4,24 +4,28 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>CS61B</groupId>
-    <artifactId>proj2</artifactId>
+    <groupId>gitlet</groupId>
+    <artifactId>gitlet</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <properties>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <build>
-        <sourceDirectory>${project.basedir}</sourceDirectory>
-        <testSourceDirectory>${project.basedir}</testSourceDirectory>
+        <finalName>gitlet</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                    <source>14</source>
-                    <target>14</target>
-                    <compilerArgs>
-                        <arg>-J-XX:+ShowCodeDetailsInExceptionMessages</arg>
-                    </compilerArgs>
+                    <archive>
+                        <manifest>
+                            <mainClass>gitlet.Main</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

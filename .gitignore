@@ -1,9 +1,3 @@
-*.class
-sentinel
-.DS_Store
-.idea/
-*.iml
-__pycache__/
-*.pyc
-test*_[0-9]/
 target/
+.idea/
+.DS_Store
